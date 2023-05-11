@@ -1,2 +1,2 @@
 # DeepSearch
-This is my first project  in DeepSearch Company
+This is my first project  in DeepReSearch Company
