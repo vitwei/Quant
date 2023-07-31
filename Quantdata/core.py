@@ -41,7 +41,7 @@ ts300=df300.loc[df300['con_code'].isin(tslist['ts_code'])]
 ts300=ts300[['con_code']]
 ts300.drop_duplicates(inplace=True)
 ts300=ts300['con_code'].tolist()
-tslist['ts_code'].tolist()
+#ts300.append('600552.SH')
 res=pd.DataFrame()
 std=pd.read_feather('Database/标准化信息.feather')
 sc=StandardScaler(with_mean=False, with_std=False)
@@ -65,13 +65,16 @@ class MLPrg(nn.Module):
         output=self.predict(x)
         return output[:,0]
 if __name__ == '__main__':
-    rg = torch.load('modelbase/bestks0.025.pt').cpu()
+    #rg = torch.load('modelbase/bestks0.025.pt').cpu()
+    rg = torch.load('modelbase/bestks0.025.pt', map_location=torch.device('cpu'))
     with Pool(processes=cpu_count()-1) as pool:
         catchsignal1 = partial(catch_norm0, stddata=data)
         catchsignal2 = partial(catchsignal1, rg=rg)
         catchsignal3 = partial(catchsignal2, sc=sc)
-        results=pool.map(catchsignal3, tslist.sample(500)['ts_code'].tolist())
-res=pd.concat(results)
-res.index=range(res.shape[0])
-res.to_feather('Database/autodata.feather')
+        #results=pool.map(catchsignal3, tslist.sample(500)['ts_code'].tolist())
+        results=pool.map(catchsignal3, ts300)
+    res=pd.concat(results)
+    res.index=range(res.shape[0])
+    res.to_feather('Database/autodata.feather')
+
 
