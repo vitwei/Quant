@@ -18,14 +18,18 @@ import scipy
 from sklearn.metrics import mean_squared_error,mean_absolute_error
 import tushare as ts
 from sklearn.preprocessing import StandardScaler
-from packge.catchsignal import catch,catch_norm0
+from Quantdata.catchsignal import catch,catch_norm0
 import multiprocessing
 from multiprocessing import Pool, cpu_count
 from functools import partial
 
 
 pro = ts.pro_api("92bfb7a5df70a386927cf4cb1c2b5809df1f45ba402f32dc605111f6")
+<<<<<<< HEAD
 data=pd.read_feather('Database/std.feather')
+=======
+data=pd.read_feather('Database/20212022std2.feather')
+>>>>>>> 70cb2f8b0aef91778921e394c6f41fac65579033
 stock = pro.stock_basic()
 stock=stock.loc[stock['symbol'].isin(data['ts_code'])]
 tslist=stock[['ts_code']]
@@ -101,6 +105,6 @@ if __name__ == '__main__':
 '''
 res=pd.concat(results)
 res.index=range(res.shape[0])
-res.to_feather('autodata.feather')
+res.to_feather('Database/autodata.feather')
 '''
 
