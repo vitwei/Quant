@@ -25,7 +25,7 @@ from functools import partial
 
 
 pro = ts.pro_api("92bfb7a5df70a386927cf4cb1c2b5809df1f45ba402f32dc605111f6")
-data=pd.read_feather('J:/quant_trade/20212022std2.feather')
+data=pd.read_feather('Database/std.feather')
 stock = pro.stock_basic()
 stock=stock.loc[stock['symbol'].isin(data['ts_code'])]
 tslist=stock[['ts_code']]
@@ -43,7 +43,7 @@ ts300.drop_duplicates(inplace=True)
 ts300=ts300['con_code'].tolist()
 tslist['ts_code'].tolist()
 res=pd.DataFrame()
-std=pd.read_feather('J:/quant_trade/标准化信息.feather')
+std=pd.read_feather('Database/标准化信息.feather')
 sc=StandardScaler(with_mean=False, with_std=False)
 sc.mean_=std['mean']
 sc.scale_=std['std']
@@ -65,7 +65,7 @@ class MLPrg(nn.Module):
         output=self.predict(x)
         return output[:,0]
 if __name__ == '__main__':
-    rg = torch.load('J:/quant_trade/modelbase/bestks0.025.pt').cpu()
+    rg = torch.load('modelbase/bestks0.025.pt').cpu()
     with Pool(processes=cpu_count()-1) as pool:
         catchsignal1 = partial(catch_norm0, stddata=data)
         catchsignal2 = partial(catchsignal1, rg=rg)

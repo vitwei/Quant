@@ -42,7 +42,7 @@ if __name__ == '__main__':
     rg = torch.load('modelbase/bestks0.025.pt').cpu()
 #rg = torch.load('your_model.pt', map_location=torch.device('cpu'))
 
-data=pd.read_feather('J:/quant_trade/database/trains.feather')
+data=pd.read_feather('Database/trains.feather')
 tlist=data.columns.tolist()
 tlist=tlist[3:103]
 x=data[tlist]
@@ -69,7 +69,7 @@ res=y.groupby(by='ts_code').apply(lambda x:getstd(x))
 res=res[['ts_code','std']]
 res.drop_duplicates(inplace=True)
 res.index=range(res.shape[0])
-res.to_feather('std.feather')
+res.to_feather('Database/std.feather')
 '''
 plt.figure(figsize=(16,9))
 plt.scatter(range(res.shape[0]),res['1W'],c='blue')
