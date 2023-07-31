@@ -25,7 +25,7 @@ df300 = pro.index_weight(**{
     "trade_date",
     "weight"
 ])
-data=pd.read_feather('J:/quant_trade/autodata.feather')
+data=pd.read_feather('Database/autodata.feather')
 tl=pd.unique(data['ts_code'])
 tl=tl.tolist()
 df=df.loc[df['symbol'].isin(tl)]
