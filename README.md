@@ -1,4 +1,4 @@
-# DeepSearch
+# Quant
 This is my first project  in DeepReSearch Company
 
 
