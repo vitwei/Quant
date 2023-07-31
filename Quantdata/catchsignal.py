@@ -9,17 +9,10 @@ Created on Mon Jul 10 15:18:14 2023
 import pandas as pd
 import numpy as np
 import torch 
-import math
-import time
-import torch.utils.data as Data
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.optim import SGD
 import scipy
-import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error,mean_absolute_error
 import tushare as ts
-from sklearn.preprocessing import StandardScaler
+from Quantdata.filter import Buymark
+
 
 def catch(ts_code,sc,rg,stddata):
     tscode=ts_code
@@ -144,7 +137,8 @@ def catch_norm0(ts_code,sc,rg,stddata):
     threshold=threshold*100
     #buy_threshold = scipy.stats.norm.ppf(0.7,0,df['std'])
     #sell_threshold=scipy.stats.norm.ppf(0.3,0,df['std'])
-    df['pro']=threshold
+    df['Smark']=threshold
+    df=Buymark(df)
     return df
 
 

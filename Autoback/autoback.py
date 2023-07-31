@@ -13,28 +13,28 @@ import tushare as ts
 
 
 class CustomPandasData(bt.feeds.PandasData):
-    lines = ('open', 'high', 'low', 'close', 'volume', 'openinterest', 'pre','pro')
-    params = (('open',0), ('high', 1), ('low', 2), ('close', 3), ('volume', 4), ('openinterest',5), ('pre',6),('pro',7))
+    lines = ('open', 'high', 'low', 'close', 'volume', 'openinterest', 'pre','Smark','1d','Bmark')
+    params = (('open',0), ('high', 1), ('low', 2), ('close', 3), ('volume', 4), ('openinterest', 5), ('pre', 6), ('Smark', 7), ('1d', 8), ('Bmark', 9))
 
 
-class st(bt.Strategy):#只能卖后买
+class st(bt.Strategy):#只能卖后买 可加仓
     def __init__(self):
         self.dataclose = self.data0.close
-        self.distribution = self.data0.pro
+        self.Bmark = self.data0.Bmark#cdf(0,bpro,std) >40
+        self.Smark=self.data0.Smark#cdf(pro,0,std) >60
         self.profit_target = 0.04  # 5%的收益目标
-        self.stop_target = -0.05
+        self.stop_target = -0.1
         self.daily_return_threshold = 0.000386
         self.holding_days = 0  # 持仓天数
         self.total_return = 0  # 总收益率
         self.buy_transaction =pd.DataFrame(columns=['成本','day']) # 买入交易记录
         self.buy_times=-1
         self.stop_mark=False
-        self.stop_loss=0.01
+        self.stop_loss=0.1
         self.log=pd.DataFrame(columns=['日期','行为','价格','信号','价值','操作利润','平均收益','平均日收益'])
         self.sma5=bt.ind.SimpleMovingAverage(self.dataclose,period=5)
         self.order = None
         self.pvalue=self.broker.get_value()
-        
     def notify_order(self, order):
         if order.status in [order.Submitted, order.Accepted]:
             # Buy/Sell order submitted/accepted to/by broker - Nothing to do
@@ -47,25 +47,25 @@ class st(bt.Strategy):#只能卖后买
                 buy_transaction = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'成本': [order.executed.price], 'day': [1]})
                 self.buy_transaction = pd.concat([self.buy_transaction, buy_transaction])
                 self.buy_times+=1
-                #log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['买入'],'价格': [order.executed.price],
-                 #                  '信号':['买入成功'],'价值':[order.executed.value]})
-                #self.log = pd.concat([self.log, log])
+                log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['买入'],'价格': [order.executed.price],
+                                   '信号':['买入成功'],'价值':[order.executed.value]})
+                self.log = pd.concat([self.log, log])
             elif order.issell():
                 self.buy_transaction =pd.DataFrame(columns=['成本','day'])
-                #log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'],'价格': [order.executed.price],
-                 #                 '信号':['卖出成功'],'平均收益':[self.total_return],'平均日收益':[self.average_return],
-                  #                '操作利润':[order.executed.pnl]})
-                #self.log = pd.concat([self.log, log])
+                log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'],'价格': [order.executed.price],
+                                  '信号':['卖出成功'],'平均收益':[self.total_return],'平均日收益':[self.average_return],
+                                  '操作利润':[order.executed.pnl]})
+                self.log = pd.concat([self.log, log])
                 self.buy_times=-1
-      #  elif order.status in [order.Canceled, order.Margin, order.Rejected]:
-                #log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['取消'],'价格': [order.executed.price],
-                 #                  '信号':['操作取消'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
-                #self.log = pd.concat([self.log, log])
+        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
+                log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['取消'],'价格': [order.executed.price],
+                                   '信号':['操作取消'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
+                self.log = pd.concat([self.log, log])
         # Write down: no pending order
         self.order = None
     def next(self):
         buy_price = self.data0.close[0]  # 获取当前的买入价格
-        if self.position:
+        if self.position and self.Bmark[0] >40:
             current_value=self.broker.get_value()
             pnl=(current_value-self.pvalue)/self.pvalue
             self.total_return=(self.data.close[0]-self.buy_transaction['成本'])/self.buy_transaction['成本']
@@ -75,40 +75,40 @@ class st(bt.Strategy):#只能卖后买
             else:
                 self.average_return = np.nan
             if self.total_return>self.profit_target:
-            #    log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'],'价格': [self.data.close[0]],'信号':['4%到手'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
-           #     self.log = pd.concat([self.log, log])
+                log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'],'价格': [self.data.close[0]],'信号':['4%到手'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
+                self.log = pd.concat([self.log, log])
                 self.order =self.sell(exectype=bt.Order.Market)
-            elif  self.average_return < self.daily_return_threshold and self.buy_transaction['day'].max()>=60:
-           #     log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'], '价格': [self.data.close[0]],'信号':['日均较低'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
-           #     self.log = pd.concat([self.log, log])
+            elif  self.average_return < self.daily_return_threshold and self.buy_transaction['day'].max()>=10:
+                log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'], '价格': [self.data.close[0]],'信号':['日均较低'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
+                self.log = pd.concat([self.log, log])
                 self.order =self.sell(exectype=bt.Order.Market)
             elif self.total_return <=self.stop_target:
                 self.stop_mark=True
-            #    log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'], '价格': [self.data.close[0]],'信号':['止损'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
-             #   self.log = pd.concat([self.log, log])
+                log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'], '价格': [self.data.close[0]],'信号':['止损'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
+                self.log = pd.concat([self.log, log])
                 self.order =self.sell(exectype=bt.Order.Market)
-            elif self.distribution[0]<30:
-            #    log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'], '价格': [self.data.close[0]],'信号':['卖出分布'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
-            #    self.log = pd.concat([self.log, log])
+            elif self.Smark[0]<40 and self.total_return>0:
+                log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'], '价格': [self.data.close[0]],'信号':['卖出分布'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
+                self.log = pd.concat([self.log, log])
                 self.order =self.sell(exectype=bt.Order.Market)
             elif pnl<=-self.stop_loss:
                 self.stop_mark=True
-           #     log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'], '价格': [self.data.close[0]],'信号':['本金止损'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
-           #     self.log = pd.concat([self.log, log])
+                log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['卖出'], '价格': [self.data.close[0]],'信号':['本金止损'],'平均收益':[self.total_return],'平均日收益':[self.average_return]})
+                self.log = pd.concat([self.log, log])
                 self.order =self.sell(exectype=bt.Order.Market)
             if not self.buy_transaction.empty:
                 self.buy_transaction['day']+=1
-        elif self.distribution[0] >70 and self.stop_mark==False:   
+        if self.Bmark[0]<40 and self.stop_mark==False :   
             if self.buy_times==-1:
-          #      log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['买入'],'价格': [buy_price],'信号':[self.distribution[0]]})
-          #      self.log = pd.concat([self.log, log])
+                log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['买入'],'价格': [buy_price],'信号':[self.Bmark[0]]})
+                self.log = pd.concat([self.log, log])
                 self.order = self.buy()
             elif self.buy_times!=-1 and self.total_return>0 and self.buy_times<3:
-          #      log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['买入'],'价格': [buy_price],'信号':[self.distribution[0]]})
-          #      self.log = pd.concat([self.log, log])
+                log = pd.DataFrame({'日期':[self.data0.datetime.date(0)],'行为': ['买入'],'价格': [buy_price],'信号':[self.Bmark[0]]})
+                self.log = pd.concat([self.log, log])
                 self.order = self.buy()
-   # def stop(self):
-    #    self.log.to_excel('log4.xlsx',index=None)
+  #  def stop(self):
+     #   self.log.to_excel('log1.xlsx',index=None)
 
 
 
@@ -160,7 +160,7 @@ def autotest_offline(ts_code,data):
     df['openinterest']=0
     df.set_index('Datetime',inplace=True)
     df.sort_index(inplace=True,ascending=True)
-    df=df[['open_qfq', 'high_qfq', 'low_qfq','close_qfq', 'volume', 'openinterest', 'pre','pro']]
+    df=df[['open_qfq', 'high_qfq', 'low_qfq','close_qfq', 'volume', 'openinterest', 'pre','Smark', '1d','Bpro']]
     cerebro=bt.Cerebro()
     data=CustomPandasData(dataname=df,fromdate=dt.datetime(2023,1,1),todate=dt.datetime(2024,1,1),timeframe=bt.TimeFrame.Days)
     cerebro.adddata(data)
@@ -169,7 +169,7 @@ def autotest_offline(ts_code,data):
     cerebro.addanalyzer(bt.analyzers.AnnualReturn,_name='AnnualReturn')
     cerebro.broker.setcash(100000.0)
     cerebro.broker.setcommission(commission=0.0006)
-    cerebro.addsizer(bt.sizers.PercentSizer,percents=50)
+    cerebro.addsizer(bt.sizers.PercentSizer,percents=40)
     result=cerebro.run()
     res=result[0].analyzers.AnnualReturn.get_analysis()
     returns_list = list(res.values())

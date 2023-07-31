@@ -11,7 +11,7 @@ import multiprocessing
 from multiprocessing import Pool, cpu_count
 from functools import partial
 import tushare as ts
-from base.autoback import autotest_offline
+from Autoback.autoback import autotest_offline
 #from base.autoback import autotest
 
 
@@ -39,7 +39,7 @@ if __name__ == '__main__':
         autotest_partial = partial(autotest_offline, data=data)
         results=pool.map(autotest_partial, tl300['ts_code'].tolist())
     results=pd.DataFrame(results,columns=['annualreturn','maxback','ts_code'])
-
+    
 '''
 if __name__ == '__main__':
     with Pool(processes=cpu_count()-1) as pool:
