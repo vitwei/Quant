@@ -33,21 +33,20 @@ tl=df['ts_code']
 tl=pd.DataFrame(tl)
 tl300=tl.loc[tl['ts_code'].isin(df300['con_code'])]
 
-
+'''
 if __name__ == '__main__':
     with Pool(processes=cpu_count()-1) as pool:
         autotest_partial = partial(autotest_offline, data=data)
         results=pool.map(autotest_partial, tl300['ts_code'].tolist())
     results=pd.DataFrame(results,columns=['annualreturn','maxback','ts_code'])
-    
-'''
+    '''
+
 if __name__ == '__main__':
     with Pool(processes=cpu_count()-1) as pool:
-        autotest_partial = partial(autotest, data=data)
+        autotest_partial = partial(autotest_offline, data=data)
         results=pool.map(autotest_partial, tl['ts_code'].tolist())
     results=pd.DataFrame(results,columns=['annualreturn','maxback','ts_code'])
-'''
-
+    results=results[['ts_code','annualreturn', 'maxback']]
     
     
 
