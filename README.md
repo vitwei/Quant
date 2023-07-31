@@ -1,6 +1,5 @@
 # Quant
 This is my first project  in DeepReSearch Company
-#在根目录下创建Database文件夹
 
 
 Autoback:
