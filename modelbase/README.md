@@ -19,6 +19,7 @@ class MLPrg(nn.Module):
         return output[:,0]
 if __name__ == '__main__':
     rg = torch.load('J:/quant_trade/modelbase/bestks0.025.pt').cpu()
+#rg = torch.load('your_model.pt', map_location=torch.device('cpu'))
 
 '''
 
