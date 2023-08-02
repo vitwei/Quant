@@ -4,6 +4,7 @@ Created on Tue Aug  1 09:47:08 2023
 
 @author: jczeng
 """
+import scipy.stats
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -12,23 +13,26 @@ data=pd.read_feather('Database/autodata.feather')
 ts_code='600552.SH'
 temp=data[data['ts_code']==ts_code[:-3]]
 
-def SMA(data,window):
-    middle_band = data['close_qfq'].rolling(window=window).mean()
+def SMA(data,col,window):
+    middle_band = data[col].rolling(window=window).mean()
     return middle_band.tolist()
 
-def Buline(data,window=20,num_std=2):
-    middle_band=SMA(data,window)
+def Buline(data,col,window=20,num_std=2):
+    middle_band=SMA(data,col,window)
     # 计算标准差
-    moving_std = data['close_qfq'].rolling(window=window).std()
+    moving_std = data[col].rolling(window=window).std()
     # 计算上轨和下轨
     upper_band = middle_band + num_std * moving_std
     lower_band = middle_band - num_std * moving_std
     data[str(window)+'SMA']=middle_band
     data['upper_band']=upper_band
     data['lower_band']=lower_band
+    data['moving_std']=moving_std
+    data['cdf']=scipy.stats.norm.cdf(data[col],data[str(window)+'SMA'],data['moving_std'])
+    data['cdf']=data['cdf']*100
     return data
     
-def calculate_kdj(data, n=9):
+def calculate_kdj(data,col,n=9,high=None,low=None):
     """
     K线（%K）：K线是随机指标中的快速线，
     表示当前价格与一段时间内最低价之间的相对位置。
@@ -48,10 +52,15 @@ def calculate_kdj(data, n=9):
     """
     data = data.reset_index(drop=True)
     # 计算最近n天的最高价和最低价
-    data['lowest_low'] = data['low_qfq'].rolling(window=n).min()
-    data['highest_high'] = data['high_qfq'].rolling(window=n).max()
+    if high==None and low==None:
+        data['lowest_low'] = data[col].rolling(window=n).min()
+        data['highest_high'] = data[col].rolling(window=n).max()
+    else:
+        data['lowest_low'] = data[low].rolling(window=n).min()
+        data['highest_high'] = data[high].rolling(window=n).max()
+
     # 计算RSV值
-    data['rsv'] = (data['close_qfq'] - data['lowest_low']) / (data['highest_high'] - data['lowest_low']) * 100
+    data['rsv'] = (data[col] - data['lowest_low']) / (data['highest_high'] - data['lowest_low']) * 100
     # 初始化K和D值
     data['k'] = 50
     data['d'] = 50
@@ -59,7 +68,10 @@ def calculate_kdj(data, n=9):
     for i in range(n, len(data)):
         data.loc[i, 'k'] = 2/3 * data.loc[i-1, 'k'] + 1/3 * data.loc[i, 'rsv']
         data.loc[i, 'd'] = 2/3 * data.loc[i-1, 'd'] + 1/3 * data.loc[i, 'k']
-    # 计算J值
+
+    # Calculate J value
     data['j'] = 3 * data['k'] - 2 * data['d']
+
     return data
+
 
