@@ -4,6 +4,7 @@ Created on Tue Aug  1 09:47:08 2023
 
 @author: jczeng
 """
+from scipy.fft import fft, fftfreq,ifft
 import scipy.stats
 import numpy as np
 import pandas as pd
@@ -126,4 +127,20 @@ def winrate3(ts_code,data):
     a=data.loc[(data['mark']==True)&(data['win']==True)].shape[0]
     b=data.loc[(data['mark']==True)&(data['win']!=True)].shape[0]
     return [a/(a+b),data['ts_code'].iat[0]]
+
+
+
+
+def ff(res,weights):
+    columns_to_transform = ['vol_ratio', 'turn_over', 'net_mf_vol']
+    fvalue=pd.DataFrame(fft(res[columns_to_transform]))
+    weighted_fft = weights[0] * fvalue[0] + weights[1] * fvalue[1] + weights[2] * fvalue[2]
+    weighted_fft=np.array(weighted_fft)
+    reconstructed_signal = ifft(weighted_fft)
+    synthesized_signal = np.real(reconstructed_signal)
+    sns.lineplot(res['logreturn'])
+    sns.lineplot(np.real(reconstructed_signal))
+    
+
+
     
