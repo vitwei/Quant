@@ -1,12 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Aug  2 11:16:41 2023
-
-@author: jczeng
-"""
-
-
-import pandas as pd
 
 
 def ratew(res,key,w):
@@ -77,20 +69,38 @@ def describe_group(group):
     return group[columns].describe(percentiles=[.05, .1, .2, .25, .3, .4, .5, .6, .7, .75, .8, .9, .95])
 
 
-def save_to_excel(industry, dataframes):
-    combined_df = pd.concat(dataframes)
-    file_name = f"{industry}.xlsx"
-    combined_df.to_excel(file_name)  # 设置index=False以避免保存索引列
-    
-    
-def save_to_excel1(args):
-    industry, dataframes = args
-    with pd.ExcelWriter(f"{industry}.xlsx") as writer:
-        base_df = pd.read_excel(f"{industry}.xlsx", sheet_name='Sheet1')
-        base_df.to_excel(writer, sheet_name='Sheet1', index=False)
-        for i, df in enumerate(dataframes):
-            sheet_name = f'Sheet{i+2}'
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
-    
+def Fund_Dec(ts_code):
+    name=pro.fund_basic(**{"ts_code": "ts_code",
+}, fields=[
+    "name",
+])
+    name=name.values[0][0]
+    fund = pro.fund_nav(**{
+    "ts_code": ts_code,
+}, fields=[
+    "ts_code",
+    "nav_date",
+    "adj_nav"
+])
+    for n in range(1,5):
+        fund=ratew(fund,'adj_nav',n)
+    for n in range(2,13):
+        fund=ratem(fund,'adj_nav',n)
+    for n in range(2,6):
+        fund=ratey(fund,'adj_nav',n)
+    collist=['1W', '2W', '3W', '4W',
+           '2M', '3M', '4M', '5M', '6M', '7M', '8M', '9M', '10M', '11M', '12M',
+           '2Y', '3Y', '4Y', '5Y']
+    grouped=fund.groupby('nav_date')
+    if __name__ == '__main__':
+        with Pool(processes=cpu_count() - 2) as pool:
+            results = pool.map(describe_helper.describe_group, [group for _, group in grouped])
+    for  nav_date, group_df in zip(grouped.groups.keys(), results):
+        group_df['nav_date'] = data_date
+    combined_df = pd.concat(results)
+    write=pd.ExcelWriter(path='D:/project/quant_trade/ETF/'+name+'.xlsx')
+    combined_df.to_excel(excel_writer=write,sheet_name='dec',index=None)
+    fund.to_excel(excel_writer=write,sheet_name='data',index=None)
+    write.save()
 
 
