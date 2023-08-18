@@ -93,42 +93,6 @@ def calculate_kdj(data,col,n=9,high=None,low=None):
 
     return data
 
-def winrate1(ts_code,data):
-    data=data.loc[data['ts_code']==ts_code]
-    data=Buline(data,'close_qfq',14)
-    data['mark']=np.nan
-    data.loc[data['cdf']<20,['mark']]=True
-    a=data.loc[(data['mark']==True)&(data['1W']>0)].shape[0]
-    b=data.loc[(data['mark']==True)&(data['1W']<0)].shape[0]
-    return [a/(a+b),data['ts_code'].iat[0]]
-    
-
-def winrate2(ts_code,data):
-    data=data.loc[data['ts_code']==ts_code]
-    data=Buline(data,'close_qfq',14)
-    data=calculate_kdj(data,'close_qfq',high='high_qfq',low='low_qfq')
-    data['mark']=np.nan
-    data.loc[(data['cdf']<20)&(data['k']<20),['mark']]=True
-    a=data.loc[(data['mark']==True)&(data['1W']>0)].shape[0]
-    b=data.loc[(data['mark']==True)&(data['1W']<0)].shape[0]
-    return [a/(a+b),data['ts_code'].iat[0]]
-
-def winrate3(ts_code,data):
-    data=data.loc[data['ts_code']==ts_code]
-    data=Buline(data,'close_qfq',14)
-    data=calculate_kdj(data,'close_qfq',high='high_qfq',low='low_qfq')
-    data['mark']=np.nan
-    data.loc[(data['cdf']<20)&(data['k']<20),['mark']]=True
-    col=['5D',
-    '6D', '7D', '8D', '9D', '10D', '11D', '12D', '13D', '14D', '15D', '16D',
-    '17D', '18D', '19D', '20D', '21D', '22D']
-    data[col]=scipy.stats.norm.cdf(data[col],0,0.075385072)*100
-    data['win']=(data.loc[:, col] > 50).sum(axis=1) >= 11
-    a=data.loc[(data['mark']==True)&(data['win']==True)].shape[0]
-    b=data.loc[(data['mark']==True)&(data['win']!=True)].shape[0]
-    return [a/(a+b),data['ts_code'].iat[0]]
-
-
 
 
 def ff(res,weights):

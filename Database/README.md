@@ -1,3 +1,4 @@
 # Database
 标准化信息用于进行sklearn标准化操作
 std文件用于深度学习预测分布
+autoback为生成数据
