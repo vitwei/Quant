@@ -18,7 +18,7 @@ Modelbase：
 深度学习模型库
 
 Pymc：
-Pymc库
+进行贝叶斯统计
 
 Quantdata：
 生成可使用的回测的数据
@@ -26,5 +26,5 @@ Quantdata：
 Testspace
 测试备忘录
 
-Toolbase：
+Tool：
 工具箱
